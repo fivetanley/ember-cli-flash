@@ -1,7 +1,7 @@
 import { htmlSafe, classify } from '@ember/string';
 import Component from '@ember/component';
 import { isPresent } from '@ember/utils';
-import { run } from '@ember/runloop';
+import { run, scheduleOnce } from '@ember/runloop';
 import { computed, set, get, getWithDefault } from '@ember/object';
 import layout from '../templates/components/flash-message';
 
@@ -12,7 +12,6 @@ const {
   not
 } = computed;
 const {
-  next,
   cancel
 } = run;
 
@@ -54,10 +53,14 @@ export default Component.extend({
 
   didInsertElement() {
     this._super(...arguments);
-    const pendingSet = next(this, () => {
-      set(this, 'active', true);
-    });
+    const pendingSet = scheduleOnce('afterRender', this, this._setActive);
     set(this, 'pendingSet', pendingSet);
+  },
+
+  _setActive() {
+    if (!this.isDestroyed) {
+      set(this, 'active', true);
+    }
   },
 
   progressDuration: computed('flash.showProgress', {
